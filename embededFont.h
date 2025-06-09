@@ -2,8 +2,11 @@
 #define EMBEDEDFONT_H
 
 #include <stdint.h>
+#ifdef OPENGLES
+#include "glad/es/glad.h"
+#else
 #include "glad/glad.h"
-
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif

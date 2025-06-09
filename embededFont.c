@@ -162,6 +162,30 @@ struct EmbedFontCtx {
 static const float TEX_CHAR_WIDTH = 8.0f / TEX_ATLAS_W;
 static const float TEX_CHAR_HEIGHT = 8.0f / TEX_ATLAS_H;
 
+#ifdef OPENGLES
+static const char* vtxSrc =
+"#version 310 es\n"
+"precision mediump float;\n"
+"layout(location = 0) in vec2 aPos;\n"
+"layout(location = 1) in vec2 aTex;\n"
+"out vec2 vTex;\n"
+"void main() {\n"
+"  gl_Position = vec4(aPos, 0.0, 1.0);\n"
+"  vTex = aTex;\n"
+"}";
+
+static const char* fragSrc =
+"#version 310 es\n"
+"precision mediump float;\n"
+"in vec2 vTex;\n"
+"out vec4 FragColor;\n"
+"uniform sampler2D fontAtlas;\n"
+"uniform vec4 textColor;\n"
+"void main() {\n"
+"  float r = texture(fontAtlas, vTex).r;\n"
+"  FragColor = (r > 0.5) ? textColor : vec4(0.0);\n"
+"}";
+#else
 static const char* vtxSrc =
 "#version 330 core\n"
 "layout(location = 0) in vec2 aPos;\n"
@@ -182,6 +206,7 @@ static const char* fragSrc =
 "  float r = texture(fontAtlas, vTex).r;\n"
 "  FragColor = (r > 0.5) ? textColor : vec4(0.0);\n"
 "}";
+#endif
 
 static void checkCompileErrors(GLuint shader, const char* type) {
     GLint success;

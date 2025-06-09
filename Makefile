@@ -1,7 +1,13 @@
 # Simple Makefile for Linux/Mac
 CC = gcc
 CFLAGS = -g -O2 -Wall -std=c99
-SRC = main.c embededFont.c glad/glad.c
+ifeq ($(BUILD),opengles)
+	CFLAGS += -DOPENGLES
+	SRC = main.c embededFont.c glad/es/glad.c
+else
+	CFLAGS += -DOPENGL
+	SRC = main.c embededFont.c glad/glad.c
+endif
 OBJ = $(SRC:.c=.o)
 TARGET = shadertoy
 
@@ -10,6 +16,9 @@ INCLUDES = -I. $(shell sdl2-config --cflags)
 LIBS = $(shell sdl2-config --libs)
 
 all: $(TARGET)
+
+opengles:
+	$(MAKE) BUILD=opengles
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET) $(LIBS)

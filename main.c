@@ -2,7 +2,11 @@
 // gcc main.c embededFont.c glad/glad.c -o shadertoy -lSDL2 -ldl -lm
 
 #include <SDL2/SDL.h>
+#ifdef OPENGLES
+#include "glad/es/glad.h"
+#else
 #include "glad/glad.h"
+#endif
 #include "embededFont.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +14,30 @@
 #include <time.h>
 #include <dirent.h>  // Add at top with other includes
 
+#ifdef OPENGLES
+static const char* fragmentShaderHeader =
+"#version 310 es\n"
+"precision mediump float;\n"
+"uniform vec3 iResolution;\n"
+"uniform float iTime;\n"
+"uniform float iTimeDelta;\n"
+"uniform int iFrame;\n"
+"uniform vec4 iMouse;\n"
+"out vec4 fragColor;\n"
+"void mainImage(out vec4 fragColor, in vec2 fragCoord);\n"
+"void main() {\n"
+"    vec2 fragCoord = gl_FragCoord.xy;\n"
+"    mainImage(fragColor, fragCoord);\n"
+"}\n";
+
+static const char* vertexShaderSource =
+"#version 310 es\n"
+"precision mediump float;\n"
+"in vec2 aPos;\n"
+"void main() {\n"
+"    gl_Position = vec4(aPos, 0.0, 1.0);\n"
+"}\n";
+#else
 static const char* fragmentShaderHeader =
 "#version 330\n"
 "uniform vec3 iResolution;\n"
@@ -30,6 +58,7 @@ static const char* vertexShaderSource =
 "void main() {\n"
 "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
 "}\n";
+#endif
 
 GLuint loadShaderFromFile(const char* path) {
 	// Load user shader source
@@ -158,15 +187,25 @@ int main(int argc, char* argv[]) {
 
 	SDL_Init(SDL_INIT_VIDEO);
 	// Set OpenGL context version (this can be adjusted)
+#ifdef OPENGLES
+// Replace existing SDL_GL_SetAttribute calls with:
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#else
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
 	SDL_Window* win = SDL_CreateWindow("ShaderToy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	SDL_GLContext ctx = SDL_GL_CreateContext(win);
 	SDL_GL_SetSwapInterval(1);
+#ifdef OPENGLES	
+	gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress);
+#else	
 	gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress);
-
+#endif
 	 // Query and print GLSL version
 	const GLubyte* glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
 	const GLubyte* glVersion = glGetString(GL_VERSION);
